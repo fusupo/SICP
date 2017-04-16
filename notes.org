@@ -1,0 +1,211 @@
+* 1 Building Abstractions with Procedures
+** 1.1 The Elements of Programming 
+   - The language serves as a framework within which we organize our ideas about
+     processes. Provides a means to combine simple ideas to form mor complex
+     ideas. Three mechanisms for accomplishing this:
+    - Primitive Expressions - which represent the simplest entities the language is concerned with
+    - Means of Combination - by which compound elements are built from simpler ones
+    - Means of Abstraction - by which compound elements can be named and manipulated as units
+*** 1.1.1 Expressions
+    Numbers, Primitive Procedures
+    - The list with first element as *operator* and rest as *operands* is called a *combination*
+      - e.g. (+ 10 12 56)
+*** 1.1.2 Naming and the Environment
+    - ~define~ is our simplest means of _abstraction_ allowing the use of simple
+      names to refer to the results of compound expressions 
+    - the *environment* is a memory intended to keep track of name-object pairs
+      created through ~define~ (and other sources)
+*** 1.1.3 Evaluating Combinations
+    - Basic procedure for evaluating *combinations*:
+      1. Evaluate the subexpressions of the combination
+      2. Apply the procedure that is the value of the leftmost subexpression to
+         the arguments that are the values of the other subexpressions
+    - Viewing evaluation as a tree, we can imagine that the values of the
+      operands percolate upward in a process refered to as _tree accumulation_
+    - rules dictating primitive cases (leaf nodes of the evaluation) with a fiew rules:
+      1. the value of numerals are the numbers that they name
+      2. the values of built-in operators are the machine instruction sequences
+         that carry out the corresponding operations
+      3. the values of other names are the objects associated with those names
+         in the environment(rule 2 is a special subset of this rule)
+    - Exceptions to the general evaluation rules are refered to as *special forms*
+      - i.e. '(define x 3)' is not a *combination* as the 'x' isn't to be
+        evaluated but associatd with the value '3'
+*** 1.1.4 Compound Procedures
+    - The means in Lisp to accomplished the mechanisms described in 1.1 have
+      been identified as follows:
+      - Numbers ans arithmetic operations are primitive data and procedures
+      - Nesting of *combinations* provides a means of combining operations
+      - Definitions that associate names with values provide a limited means of abstraction
+    - *procedure definitions* provide another more powerful abstraction
+      technique whereby a compound operation can be given a name and be referred
+      to as a unit
+    - The general form of the *procedure definition* is
+      (define (<~name~> <~formal parameters~>) <~body~>)
+      - its should be noted 2 things happen here. The creation of the procedure
+        and the associating it with a name. It is important to be able to
+        separate these two notions
+      - ~name~ is a symbol to by associated with the procedure definition in the environment
+      - ~formal parameters~ are the names used within the body of the procedure
+        to refer to corresponding arguments of the procedure
+      - ~body~ is an expression that will yield the value of the procedure
+        application when the formal parameters arereplaced by the actual
+        arguments to which the procedure is applied
+*** 1.1.5 The Substitution Model for Procedure Application
+    - To apply a compound procedure to arguments, evaluate the body of the
+      procedure with each formal parameter replaced by the corresponding
+      argument (the *substitution model* being a process of figuring the meaning
+      of a procedure call 'on paper', long division style)
+      - in practice the 'substitution' happens in a local environment
+      - this *substitution model* is actually simple and inadaquite for handling
+        at least procedures with "mutable data" as we shall see
+    - Two methods of evaluation come into play:
+      - *Normal-order evaluation* - 'fully expand and then reduce'
+      - *Applicative-order evaluation* - 'evaluate the arguments then apply'
+      - Lisp uses *applicative-order*, though it can be shown that for procedure
+        applications that can be modeled using substitution and that yield
+        legitimate values, normal and applicative order will produce the same
+        value.
+      - *applicative-order* is used in Lisp partialybecause it avoids duplicate
+        computations(think of a custom squaring function)
+*** 1.1.6 Conditional Expressions and Predicates
+    - ~cond~ is another special form that allows for *case analysis* i.e.
+      execution of diferent procedure dependent on conditions
+      (cond (<~p1~> <~e1~>)
+            (<~p2~> <~e2~>)
+            ...
+            (<~pn~> <~en~>))  where..
+      - each (<~p~> <~e~>) pair is refered to as a *clause*
+        - the first expression is a *predicate*, an expression interpreted as either true or fals
+        - the second is the *consequent expression* evaluated when after the
+          *predicate* is evaluated and resolved to a true value
+        - the value of the ~cond~ form is the value of the *consequent
+          expressions* evaluaiton, if none fire the value is ~undefined~
+        - examples of primitive predicates include: > < =
+    - ~if~ is a special form of conditional specifically for when there are two
+      cases in the *case analysis* i.e.
+      (if <~predicate~> <~consequent~> <~alternative~>)
+    - in a ~cond~ expression each <e> can be a list of expressions, the value of
+      the last being the value returned. Not so with the ~if~ form, where the
+      <e> must be a single expression
+    - examples of primitive logical composition operations are as follows:
+      - (and <e1> ... <en>)
+        - from left to right the <e>'s are evaluated one after the other, if
+          any evaluates to false the ~and~ forms value is false and evaluation
+          of subsequent <e>'s is aborted
+        - if all the <e>'s evaluate to true values, then the value of the ~and~
+          form is the value of the last expression
+      - (or <e1> ... <en>)
+        - from left to right the <e>'s are evaluated one after the other, if any
+          evaluate to true the value of the ~or~ form is that value and
+          remaining evaluations are aborted.
+        - if all the <e>'s evaluate to false, the value of the ~or~ is false
+      - (not <e>)
+        - The value of the ~not~ expression is true when the <e> evaluates to
+          false, and false otherwise
+        - ~not~, unlike ~and~ and ~or~, is an ordinary procedure 
+*** Exercises 1.1
+    #+BEGIN_SRC scheme
+      10
+      ;; 10
+
+      (+ 5 3 4)
+      ;; 12
+
+      (- 9 1)
+      ;; 8
+
+      (/ 6 2)
+      ;; 3
+
+      (+ (* 2 4) (- 4 6))
+      ;; 6
+
+      (define a 3)
+      ;; 3
+
+      (define b (+ a 1))
+      ;; 4
+
+      (+ a b (* a b))
+      ;; 19
+
+      (= a b)
+      ;; false -- #f
+
+      (if (and (> b a) (< b (* a b)))
+          b
+          a)
+      ;; 4
+
+      (cond ((= a 4) 6)
+            ((= b 4) (+ 6 7 a))
+            (else 25))
+      ;; 16
+
+      (+ 2 (if (> b a) b a))
+      ;; 6
+
+      (* (cond ((> a b) a)
+               ((< a b) b)
+               (else -1))
+         (+ a 1))
+      ;; 16
+    #+END_SRC
+*** Exercises 1.2
+    #+BEGIN_SRC scheme
+      (/ (+ 5 4 (- 2 (- 3 (+ 6 (/ 4 5)))))
+         (* 3 (- 6 2) (- 2 7)))
+    #+END_SRC
+*** Exercises 1.3
+    #+BEGIN_SRC scheme
+      (define (somecrap a b c)
+        (cond ((or (= a b c)
+                   (and (= a b) (a > c))
+                   (and (= a c) (a > b))) (+ (* a a) (* a a))
+              ((and (= b c) (> b a))) (+ (* b b) (* b b))
+              ((or
+                (and (= a c) (> b c))
+                (and (> a c) (> b c))) (+ (* a a) (* b b)))
+              ((or
+                (and (= a b) (> c b))
+                (and (> a b) (> c b))) (+ (* a a) (* c c)))
+              ((or
+                (and (= b a) (> c a))
+                (and (> b a) (> c a))) (+ (* b b) (* c c))))))
+
+      (somecrap 1 2 3)
+    #+END_SRC
+*** Exercises 1.4
+    #+BEGIN_SRC scheme
+      (define (a-plus-abs-b a b)
+        ((if (> b 0) + -) a b))
+
+      ;; the function will first evaluate (> b 0) returning a #t or an #f
+      ;; if a #t the if form will result in the value of the + operator, the - operator if #f
+      ;; either way that operator is then applied to the variables a b
+    #+END_SRC
+*** Exercises 1.5
+   #+BEGIN_SRC scheme
+     (define (p) (p))
+
+     (define (test x y)
+       (if (= x 0)
+           0
+           y))
+
+     (test 0 p)
+
+     ;; who the fuck knows what happens here, lets think about this
+     ;; p is like a no-op of sorts, it rursively calls itself add inifintum
+     ;; when we call test with arguments 0 and p, we test if x equals 0 if so we
+     ;; return 0
+     ;; otherwise we would return teh result of interpeting y, which would lead
+     ;; to teh pits of hell 
+     ;; this proves the applicative order by returning zero and never evaluating
+     ;; the poorly formed p function
+     ;; a little more nuance...
+     ;; in normal-order evaluation, the call to (test 0 (p)) itself would result
+     ;; in an infinit recursive decent on the evaluation of the function (p)
+   #+END_SRC
+ 
